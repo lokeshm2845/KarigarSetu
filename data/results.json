@@ -1,0 +1,84 @@
+{
+  "_note": "SIMULATED: results on seeded synthetic data, not field results.",
+  "dataset": {
+    "karigars": 12,
+    "orders": 186,
+    "gold_issued_kg": 4.19,
+    "period": "2026-08-01 to 2026-10-31"
+  },
+  "baseline": {
+    "unexplained_gold_gap_g": 3.6,
+    "unexplained_gold_gap_inr": 26677,
+    "late_orders": 18,
+    "late_pct": 9.7,
+    "late_orders_with_occasion": 5,
+    "returns_over_agreed_wastage": 15,
+    "avg_payment_wait_days": 22.1
+  },
+  "with_karigarsetu": {
+    "wastage_anomalies_caught_at_return": "14 of 15",
+    "wastage_false_flags": 0,
+    "late_orders_warned_3plus_days_ahead": "12 of 18",
+    "deadline_false_alarms": 11,
+    "avg_payment_wait_days": 2.1,
+    "voice_notes_parsed_without_followup": "113 of 120 (94%)"
+  },
+  "intake_failures": [
+    {
+      "id": "V004",
+      "text": "Manjunath ge nalavattu eradu gram 22 carat, ungura, 23 September",
+      "missing": [
+        "weight"
+      ],
+      "note": "weight spoken in words"
+    },
+    {
+      "id": "V012",
+      "text": "Imran ge nalavattu eradu gram 916 haara, 4 September ge beku",
+      "missing": [
+        "weight"
+      ],
+      "note": "weight spoken in words"
+    },
+    {
+      "id": "V034",
+      "text": "Issue nalavattu g 22K earrings to Gopal, due 5/11",
+      "missing": [
+        "weight"
+      ],
+      "note": "weight spoken in words"
+    },
+    {
+      "id": "V039",
+      "text": "Issue 7.143 g 22K ring to Manjunath",
+      "missing": [
+        "due_date"
+      ],
+      "note": "due date cut off"
+    },
+    {
+      "id": "V108",
+      "text": "Anil ge nalavattu eradu gram 916 bale, 19 October ge beku",
+      "missing": [
+        "weight"
+      ],
+      "note": "weight spoken in words"
+    },
+    {
+      "id": "V119",
+      "text": "Basavaraj ge nalavattu eradu gram 22 carat, sara, 27 August",
+      "missing": [
+        "weight"
+      ],
+      "note": "weight spoken in words"
+    },
+    {
+      "id": "V120",
+      "text": "Ravi ko 0.8 tola  anguthi, 6 Oct tak",
+      "missing": [
+        "karat"
+      ],
+      "note": "karat not mentioned"
+    }
+  ]
+}

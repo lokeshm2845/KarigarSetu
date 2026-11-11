@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KarigarSetu Dashboard</title>
+<style>
+  :root{--ink:#2A1A14;--ivory:#FBF6EF;--sand:#F3E8D8;--card:#FFFDF9;--line:#E6D5C0;--terra:#A3402A;--gold:#D9A441;--muted:#5A4A42;--soft:#7A6456;--ok:#2F6B4F}
+  *{box-sizing:border-box} body{margin:0;background:var(--ivory);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  header{background:var(--ink);color:var(--ivory);padding:18px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:22px} header .sub{color:#CDB8A4;font-size:13px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .sim{background:var(--gold);color:var(--ink)} .okb{background:#DDEFE5;color:var(--ok)} .bad{background:#F7E1DA;color:var(--terra)}
+  main{padding:20px 24px;display:grid;gap:20px;grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr)}
+  @media (max-width:900px){main{grid-template-columns:1fr;padding:16px}}
+  .kpis{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .kpi b{display:block;font-size:26px;color:var(--terra)} .kpi span{color:var(--muted);font-size:13px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+  section h2{margin:0 0 12px;font-size:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)} th{color:var(--soft);font-weight:600}
+  .scroll{overflow:auto;max-height:340px}
+  .alert{border-left:4px solid var(--terra);background:#FBEEE9;padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:13px}
+  .alert.DEADLINE{border-color:var(--gold);background:#FBF3E2}
+  .alert button{margin-top:6px}
+  .trust{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+  .tcard{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px} .tcard b{font-size:20px;color:var(--terra)}
+  .chat{display:flex;flex-direction:column;gap:8px;height:360px;overflow:auto;background:var(--sand);border-radius:10px;padding:10px}
+  .bubble{max-width:88%;padding:8px 10px;border-radius:10px;font-size:13px;white-space:pre-wrap}
+  .me{align-self:flex-end;background:#E9D6BC} .bot{align-self:flex-start;background:var(--card)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px} select,input,button{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+  input{flex:1;min-width:160px} button{background:var(--ink);color:var(--ivory);border:none;cursor:pointer} button.sec{background:var(--sand);color:var(--ink)}
+  .chips button{background:var(--sand);color:var(--ink);font-size:12px;padding:5px 9px}
+  .pend{border:1px dashed var(--terra);border-radius:8px;padding:8px;margin-top:8px;font-size:13px}
+  .mono{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--soft)}
+  .full{grid-column:1/-1}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>KarigarSetu</h1><div class="sub" id="who">Two-party gold job-work ledger</div></div>
+  <div><span class="badge sim">SIMULATED DATA</span> <span class="badge" id="chain">checking ledger…</span></div>
+</header>
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <div style="display:grid;gap:20px;min-width:0">
+    <section><h2>Alerts from the agents</h2><div id="alerts" class="scroll" style="max-height:260px"></div></section>
+    <section><h2>Gold with karigars now</h2><div class="scroll"><table id="orders"></table></div></section>
+  </div>
+
+  <section>
+    <h2>WhatsApp simulator</h2>
+    <div class="chat" id="chat"></div>
+    <div class="row">
+      <select id="sender"></select>
+      <input id="text" placeholder="e.g. Ravi ge 42.350 gram 22 carat, haar, 15 December">
+      <button id="send">Send</button>
+    </div>
+    <div class="row chips" id="chips"></div>
+    <div id="pending"></div>
+  </section>
+
+  <section class="full"><h2>Karigar trust profiles</h2><div class="trust" id="trust"></div></section>
+  <section class="full"><h2>Ledger (latest confirmed entries, hash-chained)</h2><div class="scroll"><table id="ledger"></table></div></section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const api = (p, body) => fetch(p, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {}).then(r => r.json());
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let KARIGARS = [];
+
+const EXAMPLES = [
+  ['J01','Ravi ge 42.350 gram 22 carat, haar, 25 November'],
+  ['J01','Imran ko 2 tola 916 kangan dena hai, 5 Nov tak'],
+  ['J01','Issue 6.2 g 22K ring to Prakash'],
+];
+
+function bubble(text, mine){ const d=document.createElement('div'); d.className='bubble '+(mine?'me':'bot'); d.textContent=text; $('chat').append(d); $('chat').scrollTop=1e9; }
+function nameOf(id){ if(id==='J01') return 'Jeweller'; const k=KARIGARS.find(k=>k.id===id); return k?k.name:id; }
+
+async function refresh(){
+  const [s, alerts, orders, ks, led, pend] = await Promise.all([api('/api/summary'), api('/api/alerts'), api('/api/orders?status=WITH_KARIGAR'), api('/api/karigars'), api('/api/ledger?limit=40'), api('/api/pending')]);
+  KARIGARS = ks;
+  $('who').textContent = `${s.jeweller.name}, ${s.jeweller.town} · demo date ${s.today}`;
+  $('chain').className = 'badge ' + (s.ledger.ok ? 'okb' : 'bad');
+  $('chain').textContent = s.ledger.ok ? `Ledger intact · ${s.ledger.length} entries` : `Ledger broken at #${s.ledger.broken_at}`;
+  $('kpis').innerHTML = [
+    [s.orders_open,'orders with karigars'],[s.gold_with_karigars_g.toFixed(1)+' g','gold out on job-work'],
+    [s.awaiting_settlement,'returned, awaiting settlement'],[s.open_alerts,'open alerts'],[s.orders_total,'orders in ledger']
+  ].map(([v,l])=>`<div class="kpi"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
+  $('alerts').innerHTML = alerts.length ? alerts.map(a=>`<div class="alert ${a.kind}"><b>${a.kind==='WASTAGE'?'Wastage':'Deadline'} · #${esc(a.order_id)}</b> <span class="mono">${esc(a.date)}</span><br>${esc(a.message)}${a.kind==='WASTAGE'?`<br><button class="sec" data-accept="${esc(a.order_id)}">Reviewed, accept and draft settlement</button>`:''}</div>`).join('') : '<p>No open alerts.</p>';
+  $('orders').innerHTML = '<tr><th>Order</th><th>Karigar</th><th>Item</th><th>Weight</th><th>Issued</th><th>Due</th><th>Occasion</th></tr>' +
+    orders.map(o=>`<tr><td>${esc(o.order_id)}</td><td>${esc(o.karigar_name)}</td><td>${esc(o.item)} ${o.karat}K</td><td>${o.issued_g.toFixed(3)} g</td><td>${esc(o.issued_on)}</td><td>${esc(o.due_date)}</td><td>${esc(o.occasion_date||'')}</td></tr>`).join('');
+  $('trust').innerHTML = ks.map(k=>{const t=k.trust; return `<div class="tcard"><div><strong>${esc(k.name)}</strong> <span class="mono">${esc(k.id)}</span></div><b>${t.score??'–'}</b>/100 · ${esc(t.tier)}<br>${t.orders_completed} orders · ${t.on_time_rate!=null?Math.round(t.on_time_rate*100)+'% on time':''}<br>${t.returns_over_agreed??0} over agreed wastage</div>`}).join('');
+  $('ledger').innerHTML = '<tr><th>#</th><th>Type</th><th>Order</th><th>Details</th><th>Approved</th><th>Hash</th></tr>' +
+    led.map(e=>{const p=e.payload; const d=e.entry_type==='ISSUE'?`${p.karigar_name} · ${p.issued_g} g ${p.karat}K ${p.item}`:e.entry_type==='RETURN'?`piece ${p.piece_g} g · scrap ${p.scrap_g} g`:`balance ${p.gold_balance_g} g · pay ₹${p.net_payable_inr}`; return `<tr><td>${e.seq}</td><td>${e.entry_type}</td><td>${esc(p.order_id)}</td><td>${esc(d)}</td><td>${esc(e.approved_at)}</td><td class="mono">${e.hash.slice(0,12)}…</td></tr>`}).join('');
+  $('pending').innerHTML = pend.slice(-5).map(p=>`<div class="pend">Waiting: <b>P${p.id}</b> ${esc(p.entry_type)} #${esc(p.payload.order_id)} · jeweller ${p.jeweller_ok?'approved':'pending'} · karigar ${p.karigar_ok?'approved':'pending'}<div class="row">${p.jeweller_ok?'':`<button data-p="${p.id}" data-party="jeweller">Jeweller: OK</button>`}${p.karigar_ok?'':`<button data-p="${p.id}" data-party="karigar">Karigar: Sari</button>`}<button class="sec" data-p="${p.id}" data-party="${p.karigar_ok?'jeweller':'karigar'}" data-no="1">No</button></div></div>`).join('');
+  if(!$('sender').options.length){ $('sender').innerHTML = `<option value="jeweller|J01">Jeweller</option>` + ks.map(k=>`<option value="karigar|${k.id}">${esc(k.name)} (karigar)</option>`).join(''); }
+}
+
+async function send(){
+  const text=$('text').value.trim(); if(!text) return;
+  const [role,id]=$('sender').value.split('|');
+  bubble(`${nameOf(id)}: ${text}`, true); $('text').value='';
+  const r = await api('/api/message', {role, sender_id:id, text});
+  (r.replies||[]).forEach(x=>bubble(`→ ${nameOf(x.to)}: ${x.text}`));
+  refresh();
+}
+document.addEventListener('click', async e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.p){ const txt=b.dataset.no?'No':(b.dataset.party==='jeweller'?'OK':'Sari'); bubble(`${b.dataset.party==='jeweller'?'Jeweller':'Karigar'}: ${txt}`, true);
+    const r=await api('/api/reply',{party:b.dataset.party,pending_id:+b.dataset.p,text:txt}); (r.replies||[]).forEach(x=>bubble(`→ ${nameOf(x.to)}: ${x.text}`)); refresh(); }
+  if(b.dataset.accept){ const r=await api(`/api/orders/${b.dataset.accept}/accept-wastage`,{}); (r.replies||[]).forEach(x=>bubble(`→ ${nameOf(x.to)}: ${x.text}`)); refresh(); }
+  if(b.dataset.ex!==undefined){ const [id,t]=EXAMPLES[+b.dataset.ex]; $('sender').value=id==='J01'?'jeweller|J01':`karigar|${id}`; $('text').value=t; }
+});
+$('send').onclick=send; $('text').addEventListener('keydown',e=>{if(e.key==='Enter') send();});
+$('chips').innerHTML = 'Try: ' + EXAMPLES.map((x,i)=>`<button data-ex="${i}">${esc(x[1].slice(0,34))}…</button>`).join('');
+bubble('KarigarSetu: send an issue or return as the jeweller or a karigar. Entries lock only when both sides confirm.');
+refresh();
+</script>
+</body>
+</html>
