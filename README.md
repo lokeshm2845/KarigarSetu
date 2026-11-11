@@ -139,4 +139,11 @@ tests/             unit and flow tests
 
 ## Team
 
-Team [Team name], [College name]. Built for Tech4Bharat, GAVS 2026.
+**Team victoryverse**, built for Tech4Bharat, GAVS 2026.
+
+| Member | Role |
+|---|---|
+| Lokesh Magare | Team lead |
+| Parth Bhoi | Member |
+
+Contact: lokeshmagare866@gmail.com
